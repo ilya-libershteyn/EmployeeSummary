@@ -4,61 +4,68 @@ const Intern = require("./lib/Intern");
 const inquirer = require("inquirer");
 const path = require("path");
 const fs = require("fs");
+const util = require('util');
 
 const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
+const writeFileAsync = util.promisify(fs.writeFile);
 
 const render = require("./lib/htmlRenderer");
 
-function buildTeam()
+const buildTeam = async() =>
 {
     const employees = [];
-    const stop = false;
+    let stop;
 
     do
     {
-        let type = inquirer.prompt
+        let type = await inquirer.prompt
         (
-            {
+            [{
                 type: 'list',
                 name: 'employeeType',
                 message: 'What type of employee are you adding?',
-                choices: ['Manager', 'Egnineer', 'Intern']
-            }
+                choices: ['Manager', 'Engineer', 'Intern']
+            }]
         );
+        
+        console.log(type.employeeType);
 
-        switch(type)
+        switch(type.employeeType)
         {
             case 'Manager':
-                employees.push(createManager());
+                employees.push(await createManager());
                 break;
             
             case 'Engineer':
-                employees.push(createEngineer());
+                employees.push(await createEngineer());
                 break;
             
             case 'Intern':
-                employees.push(createIntern());
+                employees.push(await createIntern());
                 break;
         }
 
-        stop = inquirer.prompt
+        stop = await inquirer.prompt
         (
-            {
+            [{
                 type: 'list',
                 name: 'continue',
                 message: 'Add more employees?',
                 choices: ['yes', 'no']
-            }
+            }]
         );
-        
-    }while(stop.equals('yes'));
+
+    console.log(stop.continue)    
+    }while(stop.continue === 'yes');
+
+    writeFileAsync(outputPath, render(employees));
 }
 
-function createManager()
+const createManager = async() =>
 {
-    let manager = inquirer.prompt
-    (
+    let manager = await inquirer.prompt
+    ([
         {
             type: 'input',
             name: 'name',
@@ -79,15 +86,15 @@ function createManager()
             name: 'office',
             message: 'Office Number: '
         }
-    );
+    ]);
 
     return new Manager(manager.name, manager.id, manager.email, manager.office);
 }
 
-function createEngineer()
+const createEngineer = async() =>
 {
-    let engineer = inquirer.prompt
-    (
+    let engineer = await inquirer.prompt
+    ([
         {
             type: 'input',
             name: 'name',
@@ -108,15 +115,15 @@ function createEngineer()
             name: 'github',
             message: 'GitHub: '
         }
-    );
+    ]);
 
     return new Engineer(engineer.name, engineer.id, engineer.email, engineer.github);
 }
 
-function createIntern()
+const createIntern = async() =>
 {
-    let intern = inquirer.prompt
-    (
+    let intern = await inquirer.prompt
+    ([
         {
             type: 'input',
             name: 'name',
@@ -137,9 +144,9 @@ function createIntern()
             name: 'school',
             message: 'School: '
         }
-    );
+    ]);
 
-    return new Intern(intern.name, intern.id, intern.email, intern.github);
+    return new Intern(intern.name, intern.id, intern.email, intern.school);
 }
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
@@ -163,3 +170,4 @@ function createIntern()
 // for further information. Be sure to test out each class and verify it generates an
 // object with the correct structure and methods. This structure will be crucial in order
 // for the provided `render` function to work! ```
+buildTeam();
